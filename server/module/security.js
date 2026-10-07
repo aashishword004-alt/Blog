@@ -1,0 +1,31 @@
+import argon2 from "argon2"
+
+const security = {
+    async converthash(password) {
+        try {
+            const hash = await argon2.hash(password);
+            console.log(hash)
+            return hash;
+        } catch (err) {
+            console.log('password Hash fails')
+        }
+    },
+    async compare(compare,hash) {
+        try {
+            if (await argon2.verify(hash,compare)) {
+                 return true
+            } else {
+                console.log('not')
+                return false
+            }
+        } catch (err) {
+            console.log(err)
+        }
+    }
+}
+
+
+
+// let hash = await security.converthash(inn)
+// let com = await security.compare('ashis',hash)
+module.exports = {security}

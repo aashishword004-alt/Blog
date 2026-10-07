@@ -1,12 +1,13 @@
 import express from 'express'
 const app = express()
+import con from './database/connection.js'
 
 app.get('/hello' , (req,res) =>{
     if(req)
-    {
-        
+    {  
         res.json('its work')
     }
+    
 });
 
 
