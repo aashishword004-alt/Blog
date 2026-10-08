@@ -24,8 +24,4 @@ const security = {
     }
 }
 
-
-
-// let hash = await security.converthash(inn)
-// let com = await security.compare('ashis',hash)
-module.exports = {security}
+export default security

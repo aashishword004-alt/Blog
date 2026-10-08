@@ -19,15 +19,17 @@ app.get(route + '/getall', (req, res) => {
     }
 })
 
-app.post(route + '/register', (req, res) => {
+app.post(route + '/register', async (req, res) => {
     try {
         let { name, email, password } = req.body
         if (!name || !email || !password) {
             res.json(err)
         }
-        const hash = await 
-        
-    }
+        const hash = await security.converthash(password)
+        const sql = `INSERT INTO users (name,email,password) VALUES (?,?,?)`
+        const values = [name,email,hash]
+        const result = await  connect.query(sql,values)
+   }
     catch (error) {
         console.log(error);
 
