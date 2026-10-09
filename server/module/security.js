@@ -4,7 +4,6 @@ const security = {
     async converthash(password) {
         try {
             const hash = await argon2.hash(password);
-            console.log(hash)
             return hash;
         } catch (err) {
             console.log('password Hash fails')
