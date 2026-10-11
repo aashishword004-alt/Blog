@@ -121,7 +121,7 @@ app.put(route + '/forgot_password' , async (req,res) =>{
         let text = `Your New Password is ${otp}`; 
         let sendmail = await mail(email,sub,text);
 
-        return res.status(200).json([{'error' : false},{'success' : true},{'message' : 'Passwors Successfuly Sent '}])
+        return res.status(200).json([{'error' : false},{'success' : true},{'message' : 'Passwors Successfuly Sent On Email '}])
        
         
     }
