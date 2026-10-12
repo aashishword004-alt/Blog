@@ -1,4 +1,4 @@
-const con = require("../config/db");
+import con  from "../database/connection.js";
 
 const slugify = (text) =>
   text

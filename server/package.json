@@ -7,8 +7,10 @@
   },
   "dependencies": {
     "argon2": "^0.45.1",
+    "cors": "^2.8.6",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
+    "multer": "^2.4.0",
     "mysql2": "^3.24.5",
     "nodemailer": "^10.1.0",
     "slugify": "^1.6.9"
