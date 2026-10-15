@@ -48,6 +48,10 @@ app.post(rout + '/create', postupload.single('cover_image'), async (req, res) =>
     }
 });
 
+app.put(rout + 'update' , async (req,res) =>{
+  let {} = req.body;
+
+})
 app.use((err, req, res, next) => {
   console.log("Multer error:", err.code, "| field received:", err.field);
   if (err.code === "LIMIT_UNEXPECTED_FILE") {
