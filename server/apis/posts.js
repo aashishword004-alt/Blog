@@ -23,7 +23,7 @@ const rout = '/post';
 // 	id 	title 	slug 	excerpt 	cover_image 	content 	status 	published_at 	author_id 	created_at 	updated_a
 app.post(rout + '/create', postupload.single('cover_image'), async (req, res) => {
     try {
-        let { title, excerpt, content, status, author_id, } = req.body;
+        let { title, excerpt,  content, status, author_id, } = req.body;
         if (!title || !excerpt || !content || !author_id) {
             return res.status(400).json(err);
         }
@@ -35,35 +35,47 @@ app.post(rout + '/create', postupload.single('cover_image'), async (req, res) =>
         const values = [title, slug, excerpt, cover_image, content, status, publishedAt, author_id];
         const [Status] = await con.query(sql, values);
         
-        return res.status(201).json({
-            "message": "Post created.",
-            id: status.insertId,
-            slug,
-            cover_image: cover_image,
-            status: finalStatus,
-        });
+        return res.status(200).json([{'error' : false},{'success' : true},{'message' : 'post created successfully'}]);
     } catch (err) {
         console.log(err.message);
-        return res.status(500).json({ message: "Server error." });
+        return res.status(500).json({ 'message': 'server error'});
     }
 });
 
-app.put(rout + 'update' , async (req,res) =>{
-  let {} = req.body;
 
-})
-app.use((err, req, res, next) => {
-  console.log("Multer error:", err.code, "| field received:", err.field);
-  if (err.code === "LIMIT_UNEXPECTED_FILE") {
-    console.log(err)
-    return res.status(400).json({
-      message: `Unexpected file field "${err.field}". Expected "coverImage".`,
-    });
+app.put(rout + "/update/:id", postupload.single("cover_image"), async (req, res) => {
+  
+ 
+  try {
+      
+    let { id ,title, excerpt, content, status } = req.body;
+          id = req.params.id;
+    const sql = `select * from post where id = ?`
+    let value = [id]
+    const [result] = await con.query(sql,value);
+    if(result.length === 0)
+    {
+      if (req.file) removeFile(req.file.filename)
+      return res.status(404).json([{'error' : true},{'success' : false},{'message' : 'user not found'}]);
+    }
+    let data = result[0];  
+    const newtitle = title || data.title;
+    const newslug =  title !== data.title ? await uniqueSlug(title,id) : data.title;
+    const newexcerpt = excerpt !== undefined ? excerpt : data.excerpt;
+    const newimg = req.file ? req.file.filename : result.cover_image;
+    const newcontent = content  || data.content;
+    const newstatus = status === "published" || status === "draft" ? status : post.status;
+
+    const usql = `UPDATE posts SET title = ?, slug = ?, excerpt = ?, cover_image = ?, content = ?, status = ?, published_at = ? WHERE id = ?`;
+    let values = [newtitle ,newslug,newexcerpt,newimg,newcontent]
+    const [update] = await con.query(usql,)
+ 
+
+  } catch (err) {
+    if (req.file) removeFile(req.file.filename); // update failed, so don't keep the new image
+    console.log(err.message);
+    return res.status(500).json({ message: "Server error." });
   }
-  if (err.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({ message: "Image must be 5 MB or smaller." });
-  }
-  res.status(400).json({ message: err.message || "Upload failed." });
 });
 
 const port = 3000
