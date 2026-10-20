@@ -1,28 +1,36 @@
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog Post API Tester</title>
+    <title>Test Update Post API</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background: #f1f5f9;
-            padding: 25px;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px 15px;
         }
 
         .container {
-            max-width: 700px;
+            max-width: 650px;
             margin: auto;
             background: white;
             padding: 25px;
             border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         h2 {
             text-align: center;
+            color: #333;
+            margin-bottom: 25px;
         }
 
         label {
@@ -32,24 +40,43 @@
             font-weight: bold;
         }
 
-        input, textarea, select {
+        input,
+        textarea,
+        select {
             width: 100%;
-            padding: 10px;
+            padding: 11px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            box-sizing: border-box;
+            font-size: 15px;
+        }
+
+        textarea {
+            resize: vertical;
         }
 
         button {
-            margin-top: 20px;
-            padding: 12px;
             width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background: #007bff;
+            color: white;
             border: none;
             border-radius: 5px;
-            background: #2563eb;
-            color: white;
-            cursor: pointer;
             font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 5px;
+            background: #f1f1f1;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
         }
 
         #preview {
@@ -57,14 +84,6 @@
             max-width: 200px;
             max-height: 200px;
             margin-top: 10px;
-        }
-
-        #response {
-            background: #111827;
-            color: #d1fae5;
-            padding: 15px;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
             border-radius: 5px;
         }
     </style>
@@ -73,39 +92,35 @@
 <body>
 
 <div class="container">
-    <h2>Blog Post API Tester</h2>
 
-    <form id="postForm">
+    <h2>Update Post API Tester</h2>
+
+    <form id="updateForm">
 
         <label for="apiUrl">API URL</label>
         <input
-            type="url"
+            type="text"
             id="apiUrl"
-            value="http://localhost:5000/posts"
+            value="http://localhost:5000/posts/update"
             required
         >
 
-        <label for="method">HTTP Method</label>
-        <select id="method">
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="PATCH">PATCH</option>
-        </select>
+        <label for="id">Post ID *</label>
+        <input
+            type="number"
+            id="id"
+            name="id"
+            placeholder="Enter existing post ID"
+            min="1"
+            required
+        >
 
         <label for="title">Title</label>
         <input
             type="text"
             id="title"
             name="title"
-            required
-        >
-
-        <label for="slug">Slug</label>
-        <input
-            type="text"
-            id="slug"
-            name="slug"
-            required
+            placeholder="Enter post title"
         >
 
         <label for="excerpt">Excerpt</label>
@@ -113,7 +128,23 @@
             id="excerpt"
             name="excerpt"
             rows="3"
+            placeholder="Enter post excerpt"
         ></textarea>
+
+        <label for="content">Content</label>
+        <textarea
+            id="content"
+            name="content"
+            rows="6"
+            placeholder="Enter post content"
+        ></textarea>
+
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="">Keep existing status</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+        </select>
 
         <label for="cover_image">Cover Image</label>
         <input
@@ -123,145 +154,119 @@
             accept="image/*"
         >
 
-        <img id="preview" alt="Image preview">
+        <img id="preview" alt="Selected image preview">
 
-        <label for="content">Content</label>
-        <textarea
-            id="content"
-            name="content"
-            rows="7"
-            required
-        ></textarea>
-
-        <label for="status">Status</label>
-        <select id="status" name="status">
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-        </select>
-
-        <label for="published_at">Published At</label>
-        <input
-            type="datetime-local"
-            id="published_at"
-            name="published_at"
-        >
-
-        <label for="author_id">Author ID</label>
-        <input
-            type="number"
-            id="author_id"
-            name="author_id"
-            min="1"
-            required
-        >
-
-        <button type="submit" id="sendBtn">Send API Request</button>
-        <button type="reset" style="background:#64748b">Clear Form</button>
+        <button type="submit" id="submitBtn">
+            Update Post
+        </button>
 
     </form>
 
     <h3>API Response</h3>
-    <pre id="response">Response will appear here...</pre>
+    <div id="result">API response will appear here.</div>
+
 </div>
 
 <script>
-    const form = document.getElementById("postForm");
-    const title = document.getElementById("title");
-    const slug = document.getElementById("slug");
+    const form = document.getElementById("updateForm");
+    const resultBox = document.getElementById("result");
+    const submitBtn = document.getElementById("submitBtn");
     const imageInput = document.getElementById("cover_image");
     const preview = document.getElementById("preview");
-    const responseBox = document.getElementById("response");
-    const sendBtn = document.getElementById("sendBtn");
 
-    title.addEventListener("input", () => {
-        slug.value = title.value
-            .toLowerCase()
-            .trim()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-    });
-
-    imageInput.addEventListener("change", () => {
-        const file = imageInput.files[0];
-
-        if (preview.dataset.url) {
-            URL.revokeObjectURL(preview.dataset.url);
-            delete preview.dataset.url;
-        }
+    // Preview selected image
+    imageInput.addEventListener("change", function () {
+        const file = this.files[0];
 
         if (file) {
-            const url = URL.createObjectURL(file);
-            preview.src = url;
-            preview.dataset.url = url;
+            preview.src = URL.createObjectURL(file);
             preview.style.display = "block";
         } else {
             preview.style.display = "none";
+            preview.removeAttribute("src");
         }
     });
 
-    form.addEventListener("submit", async (event) => {
+    // Submit PUT request
+    form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
         const apiUrl = document.getElementById("apiUrl").value.trim();
-        const method = document.getElementById("method").value;
+        const id = document.getElementById("id").value;
 
-        const formData = new FormData();
-
-        formData.append("title", title.value);
-        formData.append("slug", slug.value);
-        formData.append("excerpt", document.getElementById("excerpt").value);
-        formData.append("content", document.getElementById("content").value);
-        formData.append("status", document.getElementById("status").value);
-        formData.append("published_at", document.getElementById("published_at").value);
-        formData.append("author_id", document.getElementById("author_id").value);
-
-        if (imageInput.files[0]) {
-           formData.append("cover_image", imageInput.files[0]);
+        if (!id) {
+            resultBox.textContent = "Please enter a post ID.";
+            return;
         }
 
-        sendBtn.disabled = true;
-        sendBtn.textContent = "Sending...";
-        responseBox.textContent = "Sending request...";
+        // FormData is required for file uploads with Multer
+        const formData = new FormData();
+
+        formData.append("id", id);
+
+        const title = document.getElementById("title").value;
+        const excerpt = document.getElementById("excerpt").value;
+        const content = document.getElementById("content").value;
+        const status = document.getElementById("status").value;
+
+        // Only send fields that the user wants to update
+        if (title.trim() !== "") {
+            formData.append("title", title);
+        }
+
+        if (excerpt.trim() !== "") {
+            formData.append("excerpt", excerpt);
+        }
+
+        if (content.trim() !== "") {
+            formData.append("content", content);
+        }
+
+        if (status !== "") {
+            formData.append("status", status);
+        }
+
+        const image = imageInput.files[0];
+
+        if (image) {
+            formData.append("cover_image", image);
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Updating...";
+        resultBox.textContent = "Sending request to server...";
 
         try {
             const response = await fetch(apiUrl, {
-                method: method,
+                method: "PUT",
                 body: formData
             });
 
-            const text = await response.text();
+            const responseText = await response.text();
+
+            let responseData;
 
             try {
-                responseBox.textContent =
-                    "HTTP Status: " + response.status + "\n\n" +
-                    JSON.stringify(JSON.parse(text), null, 2);
+                responseData = JSON.parse(responseText);
             } catch {
-                responseBox.textContent =
-                    "HTTP Status: " + response.status + "\n\n" + text;
+                responseData = responseText;
             }
+
+            resultBox.textContent =
+                "HTTP Status: " + response.status + "\n\n" +
+                JSON.stringify(responseData, null, 2);
+
         } catch (error) {
-            responseBox.textContent =
+            resultBox.textContent =
                 "Request failed: " + error.message +
-                "\nCheck the API URL, server, and CORS settings.";
+                "\n\nCheck your API URL, server status, and CORS settings.";
         } finally {
-            sendBtn.disabled = false;
-            sendBtn.textContent = "Send API Request";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Update Post";
         }
-    });
-
-    form.addEventListener("reset", () => {
-        setTimeout(() => {
-            if (preview.dataset.url) {
-                URL.revokeObjectURL(preview.dataset.url);
-                delete preview.dataset.url;
-            }
-
-            preview.removeAttribute("src");
-            preview.style.display = "none";
-            responseBox.textContent = "Response will appear here...";
-        }, 0);
     });
 </script>
 
 </body>
 </html>
+```
