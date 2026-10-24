@@ -43,7 +43,6 @@ app.post(rout + '/create', postupload.single('cover_image'), async (req, res) =>
   }
 });
 
-
 app.put(rout + "/update", postupload.single("cover_image"), async (req, res) => {
   
   try {
