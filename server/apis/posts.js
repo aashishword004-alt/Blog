@@ -8,7 +8,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import err from '../module/errinput.js'
 import uniqueSlug from './slug.js';
-import postupload from '../module/multer.js';
+import { postupload } from '../module/multer.js';
+import { removeFile } from '../module/multer.js';
 import con from '../database/connection.js'
 import cors from 'cors'
 
@@ -25,7 +26,7 @@ app.post(rout + '/create', postupload.single('cover_image'), async (req, res) =>
   try {
     let { title, excerpt, content, status, author_id, } = req.body;
     if (!title || !excerpt || !content || !author_id) {
-      return res.status(400).json(err);
+      return res.status(400).json(err());
     }
     const slug = await uniqueSlug(title);
     const finalStatus = status === "published" ? "published" : "draft";
@@ -44,14 +45,12 @@ app.post(rout + '/create', postupload.single('cover_image'), async (req, res) =>
 
 
 app.put(rout + "/update", postupload.single("cover_image"), async (req, res) => {
-
-
+  
   try {
-
     let { id, title, excerpt, content, status } = req.body;
     let value = [id]
     if (!id) {
-      return res.json([{ 'error': true }, { 'success': false }, { 'message': 'input is missing' }]);
+      return res.json(err());
     }
     const sql = `select * from posts where id = ?`
     const [result] = await con.query(sql, value);
@@ -60,7 +59,7 @@ app.put(rout + "/update", postupload.single("cover_image"), async (req, res) => 
       return res.status(404).json([{ 'error': true }, { 'success': false }, { 'message': 'user not found' }]);
     }
     let data = result[0];
-    const newtitle = title ||  data.title;
+    const newtitle = title || data.title;
     const newslug = title !== data.title ? await uniqueSlug(title, id) : data.title;
     const newexcerpt = excerpt !== undefined ? excerpt : data.excerpt;
     const newimg = req.file ? req.file.filename : data.cover_image;
@@ -68,17 +67,46 @@ app.put(rout + "/update", postupload.single("cover_image"), async (req, res) => 
     const newstatus = status === "published" || status === "draft" ? status : data.status;
     const publishat = data.published_at;
     const usql = `UPDATE posts SET title = ?, slug = ?, excerpt = ?, cover_image = ?, content = ?, status = ?, published_at = ? WHERE id = ?`;
-    let values = [newtitle, newslug, newexcerpt, newimg, newcontent, newstatus, publishat,id];
-    const [update] = await con.query(usql,values);
-    if(req.file) removeFile(data.cover_image);
-    return res.json([{ 'error': false }, { 'success': true }, { 'message': 'post update successfully' }, { 'row': update.affectedRows }]);
-
-
-
+    let values = [newtitle, newslug, newexcerpt, newimg, newcontent, newstatus, publishat, id];
+    const [update] = await con.query(usql, values);
+    if (req.file) removeFile(data.cover_image);
+    return res.status(200).json([{ 'error': false }, { 'success': true }, { 'message': 'post update successfully' }, { 'row': update.affectedRows }]);
 
   } catch (err) {
-    console.log(err.message);
-    if (req.file) removeFile(req.file.filename); // update failed, so don't keep the new image
+    console.log("Original error:", err.message);
+    console.log("Uploaded file:", req.file);
+
+    if (req.file) {
+      console.log("Calling removeFile...");
+      removeFile(req.file.filename);
+    } // update failed, so don't keep the new image
+    return res.status(500).json({ message: "Server error." });
+  }
+});
+
+app.delete(rout + "/delete", async (req, res) => {
+  try {
+    let { author_id, post_id } = req.body
+    if (!author_id || !post_id) {
+      return res.status(400).json(err());
+    }
+   const sql = 'SELECT id , cover_image, author_id FROM posts WHERE id = ? and author_id = ?'
+   const [result] = await con.query(sql,[post_id,author_id]);
+   if(result.length === 0)
+   {
+    return res.status(404).json([{'error' :true},{'success' : false},{'message' : 'post not found'}]);
+   }
+   let post = result[0];
+   const dsql = 'delete from posts where id = ? and author_id = ?'
+   const [output] = await con.query(dsql,[post_id,author_id]);
+   removeFile(post.cover_image);
+   return res.status(200).json([{'error': false},{'success' : true},{'message' : 'post delete successfully'}]);
+
+
+
+  }
+  catch (err) {
+    console.log(err)
     return res.status(500).json({ message: "Server error." });
   }
 });
