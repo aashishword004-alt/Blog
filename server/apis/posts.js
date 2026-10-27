@@ -20,9 +20,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
-const rout = '/post';
+const route = '/post';
+const comment_route = '/comment'
+// for post api
 // 	id 	title 	slug 	excerpt 	cover_image 	content 	status 	published_at 	author_id 	created_at 	updated_a
-app.post(rout + '/create', postupload.single('cover_image'), async (req, res) => {
+app.post(route + '/create', postupload.single('cover_image'), async (req, res) => {
   try {
     let { title, excerpt, content, status, author_id, } = req.body;
     if (!title || !excerpt || !content || !author_id) {
@@ -43,8 +45,8 @@ app.post(rout + '/create', postupload.single('cover_image'), async (req, res) =>
   }
 });
 
-app.put(rout + "/update", postupload.single("cover_image"), async (req, res) => {
-  
+app.put(route + "/update", postupload.single("cover_image"), async (req, res) => {
+
   try {
     let { id, title, excerpt, content, status } = req.body;
     let value = [id]
@@ -83,29 +85,54 @@ app.put(rout + "/update", postupload.single("cover_image"), async (req, res) => 
   }
 });
 
-app.delete(rout + "/delete", async (req, res) => {
+app.delete(route + "/delete", async (req, res) => {
   try {
     let { author_id, post_id } = req.body
     if (!author_id || !post_id) {
       return res.status(400).json(err());
     }
-   const sql = 'SELECT id , cover_image, author_id FROM posts WHERE id = ? and author_id = ?'
-   const [result] = await con.query(sql,[post_id,author_id]);
-   if(result.length === 0)
-   {
-    return res.status(404).json([{'error' :true},{'success' : false},{'message' : 'post not found'}]);
-   }
-   let post = result[0];
-   const dsql = 'delete from posts where id = ? and author_id = ?'
-   const [output] = await con.query(dsql,[post_id,author_id]);
-   removeFile(post.cover_image);
-   return res.status(200).json([{'error': false},{'success' : true},{'message' : 'post delete successfully'}]);
+    const sql = 'SELECT id , cover_image, author_id FROM posts WHERE id = ? and author_id = ?'
+    const [result] = await con.query(sql, [post_id, author_id]);
+    if (result.length === 0) {
+      return res.status(404).json([{ 'error': true }, { 'success': false }, { 'message': 'post not found' }]);
+    }
+    let post = result[0];
+    const dsql = 'delete from posts where id = ? and author_id = ?'
+    const [output] = await con.query(dsql, [post_id, author_id]);
+    removeFile(post.cover_image);
+    return res.status(200).json([{ 'error': false }, { 'success': true }, { 'message': 'post delete successfully' }]);
 
 
 
   }
   catch (err) {
     console.log(err)
+    return res.status(500).json({ message: "Server error." });
+  }
+});
+
+// for post comment apu
+app.post(comment_route + '/add', async (req, res) => {
+  try {
+    const { post_id, author_id, body } = req.body;   // TEMP: author_id will come from req.user.id
+
+    if (!post_id || !author_id || !body) {
+      return res.status(400).json(err());
+    }
+
+    // the post must exist and be published
+    const sql = `SELECT id FROM posts WHERE id = ? AND status = 'published`
+    const [posts] = await con.query(sql ,[post_id]);
+    if (posts.length === 0) {
+      return res.status(404).json([{'error' : true},{'success' : false},{'message' : 'post not found'}]);
+    }
+    const c_sql = `INSERT INTO comments (post_id, author_id, body) VALUES (?, ?, ?)`
+    const values =  [post_id, author_id, body]
+    await con.query(sql,values);
+
+    return res.status(201).json([{'error' : false},{'success' : true},{'message' : 'comment sent successfully'}]);
+  } catch (e) {
+    console.log(e.message);
     return res.status(500).json({ message: "Server error." });
   }
 });
