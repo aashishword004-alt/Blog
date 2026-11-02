@@ -112,7 +112,7 @@ app.delete(route + "/delete", async (req, res) => {
 });
 
 // for post comment apu
-app.post(comment_route + '/add', async (req, res) => {
+app.post(comment_route + '/add', async (req, res) => { 
   try {
     const { post_id, author_id, body } = req.body;   // TEMP: author_id will come from req.user.id
 
