@@ -121,19 +121,26 @@ app.post(comment_route + '/add', async (req, res) => {
     }
 
     // the post must exist and be published
-    const sql = `SELECT id FROM posts WHERE id = ? AND status = 'published`
+    const sql = `SELECT id FROM posts WHERE id = ? AND status = 'published'`
     const [posts] = await con.query(sql ,[post_id]);
     if (posts.length === 0) {
-      return res.status(404).json([{'error' : true},{'success' : false},{'message' : 'post not found'}]);
+      return res.status(404).json([{'error' : false},{'success' : false},{'message' : 'post not found'}]);
+    }
+    const a_sql = `select id from users where id = ?`
+    const [user] = await con.query(sql,[author_id]);
+    if(!user)
+    {
+      return res.status(404).json([{'error' : false},{'success' : false},{'message' : 'user not found'}]);
+
     }
     const c_sql = `INSERT INTO comments (post_id, author_id, body) VALUES (?, ?, ?)`
     const values =  [post_id, author_id, body]
     await con.query(sql,values);
-
     return res.status(201).json([{'error' : false},{'success' : true},{'message' : 'comment sent successfully'}]);
+  
   } catch (e) {
     console.log(e.message);
-    return res.status(500).json({ message: "Server error." });
+    return res.status(500).json([{'error' : true},{'success' : false},{'message' :'server error'}]);
   }
 });
 
